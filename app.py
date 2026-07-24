@@ -208,7 +208,7 @@ elif menu == "🏷️ KNN Classification":
                 st.metric("Aggregate Evaluation Classification Accuracy", f"{accuracy_score(y_test, preds)*100:.2f}%")
                 
                 st.markdown("### 📝 Detailed Boundary Distribution Output")
-                st.text_area("Vector Evaluation Metrics Matrix", str(classification_report(y_test, preds, output_dict=False)), height=200)import streamlit as st
+                st.text_area("Vector Evaluation Metrics Matrix", str(classification_report(y_test, preds, output_dict=False)), height=200)
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
