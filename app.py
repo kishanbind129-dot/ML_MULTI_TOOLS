@@ -64,7 +64,6 @@ if menu == "🏠 Dashboard Home":
         try:
             head_check = pd.read_csv(uploaded_file, nrows=5)
             uploaded_file.seek(0)
-            
             st.session_state['data'] = pd.read_csv(uploaded_file)
             st.success("Dataset successfully authenticated and loaded into secure cache.")
         except Exception:
@@ -74,12 +73,10 @@ if menu == "🏠 Dashboard Home":
     if st.session_state['data'] is not None:
         df = st.session_state['data']
         st.markdown("### 📊 Live Dataset Overview")
-        
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Rows", df.shape[0])
         c2.metric("Total Columns", df.shape[1])
         c3.metric("Missing Cells Detected", df.isna().sum().sum())
-        
         st.dataframe(df.head(10), use_container_width=True)
 
 elif menu == "📈 Linear Regression":
@@ -101,7 +98,6 @@ elif menu == "📈 Linear Regression":
                 
                 if st.button("Execute Linear Regression") and x_cols:
                     working_df = df[x_cols + [y_col]].dropna()
-                    
                     X = working_df[x_cols]
                     y = working_df[y_col]
                     
@@ -139,7 +135,6 @@ elif menu == "🎯 K-Means Clustering":
         try:
             df = st.session_state['data'].copy()
             numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-            
             x_cols = st.multiselect("Select Processing Features (Min 2)", numeric_cols)
             
             if x_cols and len(x_cols) >= 2:
@@ -170,7 +165,6 @@ elif menu == "🎯 K-Means Clustering":
                 if st.button("Generate Partition Clusters"):
                     kmeans = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
                     clusters = kmeans.fit_predict(X_scaled)
-                    
                     st.success(f"Mathematical structural optimization split completed into {k_choice} separate nodes.")
                     
                     fig_cluster, ax_cluster = plt.subplots(figsize=(10, 5))
@@ -199,13 +193,11 @@ elif menu == "🏷️ KNN Classification":
             
             if st.button("Execute Vectorized KNN Classifier") and x_cols:
                 working_df = df[x_cols + [y_col]].dropna()
-                
                 X = working_df[x_cols]
                 y = working_df[y_col]
                 
                 scaler = StandardScaler()
                 X_scaled = scaler.fit_transform(X)
-                
                 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size_user, random_state=0)
                 
                 knn = KNeighborsClassifier(n_neighbors=k_neighbors)
@@ -216,7 +208,7 @@ elif menu == "🏷️ KNN Classification":
                 st.metric("Aggregate Evaluation Classification Accuracy", f"{accuracy_score(y_test, preds)*100:.2f}%")
                 
                 st.markdown("### 📝 Detailed Boundary Distribution Output")
-import streamlit as st
+                st.text_area("Vector Evaluation Metrics Matrix", str(classification_report(y_test, preds, output_dict=False)), height=200)import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -282,7 +274,6 @@ if menu == "🏠 Dashboard Home":
         try:
             head_check = pd.read_csv(uploaded_file, nrows=5)
             uploaded_file.seek(0)
-            
             st.session_state['data'] = pd.read_csv(uploaded_file)
             st.success("Dataset successfully authenticated and loaded into secure cache.")
         except Exception:
@@ -292,12 +283,10 @@ if menu == "🏠 Dashboard Home":
     if st.session_state['data'] is not None:
         df = st.session_state['data']
         st.markdown("### 📊 Live Dataset Overview")
-        
         c1, c2, c3 = st.columns(3)
         c1.metric("Total Rows", df.shape[0])
         c2.metric("Total Columns", df.shape[1])
         c3.metric("Missing Cells Detected", df.isna().sum().sum())
-        
         st.dataframe(df.head(10), use_container_width=True)
 
 elif menu == "📈 Linear Regression":
@@ -319,7 +308,6 @@ elif menu == "📈 Linear Regression":
                 
                 if st.button("Execute Linear Regression") and x_cols:
                     working_df = df[x_cols + [y_col]].dropna()
-                    
                     X = working_df[x_cols]
                     y = working_df[y_col]
                     
@@ -357,7 +345,6 @@ elif menu == "🎯 K-Means Clustering":
         try:
             df = st.session_state['data'].copy()
             numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-            
             x_cols = st.multiselect("Select Processing Features (Min 2)", numeric_cols)
             
             if x_cols and len(x_cols) >= 2:
@@ -388,7 +375,6 @@ elif menu == "🎯 K-Means Clustering":
                 if st.button("Generate Partition Clusters"):
                     kmeans = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
                     clusters = kmeans.fit_predict(X_scaled)
-                    
                     st.success(f"Mathematical structural optimization split completed into {k_choice} separate nodes.")
                     
                     fig_cluster, ax_cluster = plt.subplots(figsize=(10, 5))
@@ -417,13 +403,11 @@ elif menu == "🏷️ KNN Classification":
             
             if st.button("Execute Vectorized KNN Classifier") and x_cols:
                 working_df = df[x_cols + [y_col]].dropna()
-                
                 X = working_df[x_cols]
                 y = working_df[y_col]
                 
                 scaler = StandardScaler()
                 X_scaled = scaler.fit_transform(X)
-                
                 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size_user, random_state=0)
                 
                 knn = KNeighborsClassifier(n_neighbors=k_neighbors)
@@ -434,3 +418,4 @@ elif menu == "🏷️ KNN Classification":
                 st.metric("Aggregate Evaluation Classification Accuracy", f"{accuracy_score(y_test, preds)*100:.2f}%")
                 
                 st.markdown("### 📝 Detailed Boundary Distribution Output")
+                st.text_area("Vector Evaluation Metrics Matrix", str(classification_report(y_test, preds, output_dict=False)), height=200)
