@@ -118,7 +118,7 @@ if menu == "🏠 Dashboard Home":
             num_count = len(df.select_dtypes(include=[np.number]).columns)
             cat_count = len(df.select_dtypes(exclude=[np.number]).columns)
             st.info(f"Feature Breakdown: {num_count} Numerical columns | {cat_count} Categorical columns")
-            elif menu == "📈 Linear Regression":
+elif menu == "📈 Linear Regression":
     st.markdown("<h2 style='color: #2563EB;'>📈 Linear Regression Pipeline</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
