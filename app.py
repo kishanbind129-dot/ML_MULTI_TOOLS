@@ -58,6 +58,28 @@ if menu == "🏠 Dashboard Home":
     uploaded_file = st.file_uploader("Drop your secure CSV file here", type=["csv"])
     
     if uploaded_file is not None:
+        MAX_BIG_FILE_SIZE = 300 * 1024 * 1024  # 300MB upper limit
+        if uploaded_file.size > MAX_BIG_FILE_SIZE:
+            st.error("Security Threat Alert: Upload blocked. File exceeds the 300MB safety limit.")
+            st.stop()
+        
+        try:
+            # Chunking process to read huge files up to 100k rows without system crash
+            chunks = []
+            for chunk in pd.read_csv(uploaded_file, chunksize=20000):
+                chunks.append(chunk)
+                if len(chunks) * 20000 >= 100000:
+                    break
+            
+            raw_df = pd.concat(chunks, ignore_index=True)
+            
+            if raw_df.empty:
+                st.error("Invalid Target: File contains no readable structural elements.")
+                st.stop()
+                
+            # Column Sanitization against code/script injection vectors
+            sanitized_cols = [str(col).replace('{','').replace('}','').replace('[','').replace(']','').replace('<','').replace('>','')[:32] for col in raw_df.columns]
+            raw_df.columns = sanitized_cols
         st.session_state['data'] = pd.read_csv(uploaded_file)
         st.success("Dataset successfully authenticated and loaded into secure cache.")
             
@@ -124,8 +146,11 @@ elif menu == "📈 Linear Regression":
                 
                 if st.button("Predict Target Value"):
                     input_df = pd.DataFrame([user_inputs])
-                    predicted_val = model.predict(input_df)[0]
-                    st.success(f"Estimated **{y_col}** value will be: **{predicted_val:.2f}**")
+                    if input_df.isin([np.inf, -np.inf, np.nan]).any().any() or (input_df.abs() > 1e12).any().any():
+                        st.error("Malicious Input Detected: Non-finite or extreme overflow numbers blocked.")
+                    else:
+                        predicted_val = model.predict(input_df)[0]
+                        st.success(f"Estimated **{y_col}** value will be: **{predicted_val:.2f}**")
 
 elif menu == "🎯 K-Means Clustering":
     st.markdown("<h2 style='color: #7C3AED;'>🎯 K-Means Clustering Core Engine</h2>", unsafe_allow_html=True)
