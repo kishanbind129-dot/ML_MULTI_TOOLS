@@ -161,7 +161,7 @@ elif menu == "📈 Linear Regression":
                     plt.grid(True, linestyle='--', alpha=0.5)
                     plt.legend()
                     st.pyplot(fig)
-                    if len(x_cols) > 1:
+                if len(x_cols) > 1:
                         st.markdown("### 📊 Driver Analysis (Feature Importance)")
                         fig_imp, ax_imp = plt.subplots(figsize=(10, max(3, len(x_cols) * 0.6)))
                         importance_df = pd.DataFrame({
@@ -175,10 +175,10 @@ elif menu == "📈 Linear Regression":
                         plt.title("Which feature changes impact the trend line most? (Blue=Positive, Red=Negative)", fontsize=10)
                         plt.grid(True, linestyle='--', alpha=0.3)
                         st.pyplot(fig_imp)
-                    st.markdown("---")
-                    st.markdown("### Live Trend predictor")
-                    st.info("Enter values for feature to predict the Trend / Target variable.")
-                    user_inputs = {}
+                st.markdown("---")
+                st.markdown("### Live Trend predictor")
+                st.info("Enter values for feature to predict the Trend / Target variable.")
+                user_inputs = {}
                 for col in x_cols:
                     min_val = float(X[col].min())
                     max_val = float(X[col].max())
