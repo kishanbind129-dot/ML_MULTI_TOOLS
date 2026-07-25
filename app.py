@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import time
-from datetime import datetime
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -22,36 +21,36 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# 🔥 ऑटोमैटिक लाइव मॉडिफिकेशन ट्रैकर (AUTOMATIC CODE CHANGE DETECTOR)
+# 🔥 FUTURE-PROOF AUTOMATIC UPGRADE DETECTOR (भविष्य के लिए पूरी तरह ऑटोमैटिक)
 # -----------------------------------------------------------------------------
-# यह कोड आपकी फाइल के सेव होते ही बदलाव को पकड़ लेता है
-MODIFICATION_COOLDOWN_MINUTES = 5  # बदलाव करने के बाद ऐप कितनी देर तक लॉक रहेगा (मिनटों में)
+# जब भी आप भविष्य में कोई नया फीचर जोड़कर फाइल सेव करेंगे, यह अपने आप एक्टिव हो जाएगा।
+UPGRADE_COOL_DOWN_MINUTES = 3  # कोड बदलने के बाद ऐप कितनी देर लॉक रहेगा
 
 try:
-    # अगर फाइल का नाम कुछ और है (जैसे main.py), तो आप यहाँ नाम बदल सकते हैं
-    file_path = "app.py" 
+    # अपनी मुख्य कोडिंग फाइल का नाम यहाँ सुनिश्चित करें
+    current_file = "app.py" 
     
-    if os.path.exists(file_path):
-        last_modified_timestamp = os.path.getmtime(file_path)
-        current_timestamp = time.time()
-        time_difference_seconds = current_timestamp - last_modified_timestamp
-        time_difference_minutes = time_difference_seconds / 60
+    if os.path.exists(current_file):
+        file_last_modified = os.path.getmtime(current_file)
+        server_current_time = time.time()
+        diff_seconds = server_current_time - file_last_modified
+        diff_minutes = diff_seconds / 60
         
-        # अगर फाइल को सेव किए अभी 5 मिनट से कम समय हुआ है, तो यूजर्स को लॉक स्क्रीन दिखेगी
-        if time_difference_minutes < MODIFICATION_COOLDOWN_MINUTES:
-            remaining_seconds = int((MODIFICATION_COOLDOWN_MINUTES * 60) - time_difference_seconds)
+        # अगर फाइल को सेव किए हुए तय मिनट से कम समय हुआ है, तो ऑटो-लॉक स्क्रीन दिखेगी
+        if diff_minutes < UPGRADE_COOL_DOWN_MINUTES:
+            time_left_seconds = int((UPGRADE_COOL_DOWN_MINUTES * 60) - diff_seconds)
             
-            st.markdown("<h1 style='text-align: center; color: #F59E0B;'>🚧 App Undergoing Live Modification 🚧</h1>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center; font-size: 20px;'>The developer just added new updates or modified the core files. The infrastructure is compiling changes safely.</p>", unsafe_allow_html=True)
+            st.markdown("<h1 style='text-align: center; color: #F59E0B;'>🚧 App is Upgrading & Modifying 🚧</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-size: 20px;'>The developer is currently deploying new features or upgrading algorithms. The infrastructure is syncing live modifications safely.</p>", unsafe_allow_html=True)
             
-            # लाइव रिवर्स टाइमर जो स्क्रीन पर घटता हुआ दिखेगा
-            st.warning(f"🔄 Cool-down period active. System re-allocating nodes. Auto-unlocking in {remaining_seconds} seconds...")
-            st.progress(int((time_difference_seconds / (MODIFICATION_COOLDOWN_MINUTES * 60)) * 100))
+            # लाइव सेकंड्स रिवर्स टाइमर जो स्क्रीन पर घटेगा
+            st.warning(f"🔄 Real-time compilation active. Auto-unlocking workspace in {time_left_seconds} seconds...")
+            st.progress(int((diff_seconds / (UPGRADE_COOL_DOWN_MINUTES * 60)) * 100))
             
             st.image("https://giphy.com", use_container_width=True)
-            st.stop() # यहाँ पर कोड रुक जाएगा, यूजर्स को आगे का ऐप नहीं दिखेगा
-except Exception as e:
-    pass # अगर फाइल पाथ ढूंढने में कोई दिक्कत आए तो बैकअप के तौर पर ऐप सामान्य रूप से चलेगा
+            st.stop() # कोड को यहीं रोक देगा ताकि यूजर्स को क्रैश ऐप न दिखे
+except Exception:
+    pass # बैकअप के लिए, ताकि किसी वजह से फाइल पाथ मिस होने पर ऐप बंद न हो
 
 # --- एंटी-फ्लड रिक्वेस्ट कंट्रोल ---
 if 'last_request_time' not in st.session_state:
@@ -70,13 +69,13 @@ if os.path.exists("Multi_task/logo.png"):
     st.sidebar.image("Multi_task/logo.png", width=120)
 st.sidebar.title("🤖 AI Multi-Tools Engine")
 
-# मैन्युअल कंट्रोल बैकअप (अगर आप हमेशा के लिए लॉक करना चाहें)
-st.sidebar.subheader("🛠️ Manual Developer Lock")
+# साइडबार में बैकअप के लिए मैन्युअल डेवलपर लॉक
+st.sidebar.subheader("🛠️ Developer Control")
 under_construction_mode = st.sidebar.checkbox("Force Under-Construction State", value=False)
 
 if under_construction_mode:
     st.markdown("<h1 style='text-align: center; color: #EF4444;'>🚧 System Under Construction 🚧</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 20px;'>The developer is currently updating the algorithms and applying live modifications. Please check back in a few minutes!</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 20px;'>The developer is applying manual live changes. Please hold on!</p>", unsafe_allow_html=True)
     st.stop()
 
 menu = st.sidebar.selectbox(
@@ -112,6 +111,7 @@ if menu == "🏠 Dashboard Home":
         df = st.session_state['data']
         st.markdown("### 📊 Live Dataset Overview")
         c1, c2, c3 = st.columns(3)
+        # ✅ FIX: .shape को अलग इंडेक्स देकर संख्या निकाली ताकि क्रैश न हो
         c1.metric("Total Rows", int(df.shape[0]))
         c2.metric("Total Columns", int(df.shape[1]))
         c3.metric("Missing Cells Detected", int(df.isna().sum().sum()))
@@ -166,8 +166,7 @@ elif menu == "📈 Linear Regression":
         st.markdown("---")
         st.markdown("### 💡 Trend Summary & Business Logic")
         st.info("**Ice Cream Sales Trend Example:** Linear Regression helps find a direct link between variables. "
-                "For instance, **जैसे-जैसे Temperature (तापमान) बढ़ेगा, Ice Cream की Sales (बिक्री) भी उसी अनुपात में लगातार बढ़ेगी**। "
-                "यह मॉडल आपको भविष्य का सटीक नंबर (Exact Prediction Value) बताने में मदद करता है।")
+                "For instance, **जैसे-जैसे Temperature (तापमान) बढ़ेगा, Ice Cream की Sales (बिक्री) भी उसी अनुपात में लगातार बढ़ेगी**।")
 
 # --- K-MEANS CLUSTERING ---
 elif menu == "🎯 K-Means Clustering":
@@ -199,3 +198,8 @@ elif menu == "🎯 K-Means Clustering":
             plt.plot(K_range, distortions, 'bx-', color='#7C3AED', marker='o', linewidth=2)
             plt.xlabel('Number of Clusters (K)')
             plt.ylabel('Calculated Structural Distortion')
+            plt.title('The Elbow Method Optimization Interface')
+            plt.grid(True, linestyle='--', alpha=0.5)
+            st.pyplot(fig_elbow)
+            
+            st.markdown("### ⚙️ Step 2: Final Cluster Optimization")
