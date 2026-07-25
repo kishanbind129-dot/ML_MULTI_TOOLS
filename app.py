@@ -93,6 +93,31 @@ if menu == "🏠 Dashboard Home":
         c2.metric("Total Columns", df.shape[1])
         c3.metric("Missing Cells Detected", df.isna().sum().sum())
         st.dataframe(df.head(10), use_container_width=True)
+        st.markdown("---")
+        st.markdown("### 🔍 Live Data Quality Audit Report")
+        col_q1, col_q2 = st.columns(2)
+        
+        with col_q1:
+            st.markdown("**🚨 Columns with Missing Values:**")
+            missing_info = df.isna().sum()
+            missing_cols = missing_info[missing_info > 0]
+            if not missing_cols.empty:
+                st.dataframe(pd.DataFrame({"Missing Count": missing_cols}), use_container_width=True)
+            else:
+                st.success("Perfect Health! No missing values found in any column.")
+                
+        with col_q2:
+            st.markdown("**📂 Row Analytics & Structural Integrity:**")
+            duplicate_count = int(df.duplicated().sum())
+            if duplicate_count > 0:
+                st.warning(f"Detected {duplicate_count} exact duplicate rows. Consider cleaning your data source.")
+            else:
+                st.success("No duplicate rows found. Data variance is clean.")
+            
+            # Numeric vs Categorical column distributions
+            num_count = len(df.select_dtypes(include=[np.number]).columns)
+            cat_count = len(df.select_dtypes(exclude=[np.number]).columns)
+            st.info(f"Feature Breakdown: {num_count} Numerical columns | {cat_count} Categorical columns")
 
 elif menu == "📈 Linear Regression":
     st.markdown("<h2 style='color: #2563EB;'>📈 Linear Regression Pipeline</h2>", unsafe_allow_html=True)
@@ -136,6 +161,20 @@ elif menu == "📈 Linear Regression":
                     plt.grid(True, linestyle='--', alpha=0.5)
                     plt.legend()
                     st.pyplot(fig)
+                    if len(x_cols) > 1:
+                        st.markdown("### 📊 Driver Analysis (Feature Importance)")
+                        fig_imp, ax_imp = plt.subplots(figsize=(10, max(3, len(x_cols) * 0.6)))
+                        importance_df = pd.DataFrame({
+                            'Feature': x_cols,
+                            'Impact Score (Coefficient)': model.coef_
+                        }).sort_values(by='Impact Score (Coefficient)', key=abs, ascending=True)
+                        
+                        colors = ['#EF4444' if x < 0 else '#2563EB' for x in importance_df['Impact Score (Coefficient)']]
+                        plt.barh(importance_df['Feature'], importance_df['Impact Score (Coefficient)'], color=colors, alpha=0.85)
+                        plt.axvline(0, color='black', linestyle='--', alpha=0.5)
+                        plt.title("Which feature changes impact the trend line most? (Blue=Positive, Red=Negative)", fontsize=10)
+                        plt.grid(True, linestyle='--', alpha=0.3)
+                        st.pyplot(fig_imp)
                     st.markdown("---")
                     st.markdown("### Live Trend predictor")
                     st.info("Enter values for feature to predict the Trend / Target variable.")
