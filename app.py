@@ -112,6 +112,20 @@ elif menu == "📈 Linear Regression":
                     plt.grid(True, linestyle='--', alpha=0.5)
                     plt.legend()
                     st.pyplot(fig)
+                    st.markdown("---")
+                    st.markdown("### Live Trend predictor")
+                    st.info("Enter values for feature to predict the Trend / Target variable.")
+                    user_inputs = {}
+                for col in x_cols:
+                    min_val = float(X[col].min())
+                    max_val = float(X[col].max())
+                    mean_val = float(X[col].mean())
+                    user_inputs[col] = st.number_input(f"Enter Value for '{col}' (Range: {min_val:.2f} - {max_val:.2f})", value=mean_val)
+                
+                if st.button("Predict Target Value"):
+                    input_df = pd.DataFrame([user_inputs])
+                    predicted_val = model.predict(input_df)[0]
+                    st.success(f"Estimated **{y_col}** value will be: **{predicted_val:.2f}**")
 
 elif menu == "🎯 K-Means Clustering":
     st.markdown("<h2 style='color: #7C3AED;'>🎯 K-Means Clustering Core Engine</h2>", unsafe_allow_html=True)
@@ -158,7 +172,21 @@ elif menu == "🎯 K-Means Clustering":
                 sns.scatterplot(x=working_df.iloc[:, 0], y=working_df.iloc[:, 1], hue=clusters, palette='viridis', s=120, alpha=0.8)
                 plt.grid(True, linestyle='--', alpha=0.4)
                 st.pyplot(fig_cluster)
-
+                st.markdown("---")
+            st.markdown("### 🔮 Live Data Node Cluster Identifier")
+            
+            user_inputs_cluster = {}
+            for col in x_cols:
+                min_val = float(working_df[col].min())
+                max_val = float(working_df[col].max())
+                mean_val = float(working_df[col].mean())
+                user_inputs_cluster[col] = st.number_input(f"Enter Value for '{col}'", value=mean_val, key=f"cluster_{col}")
+            
+            if st.button("Identify Data Cluster"):
+                input_df = pd.DataFrame([user_inputs_cluster])
+                input_scaled = scaler.transform(input_df)
+                predicted_cluster = kmeans.predict(input_scaled)[0]
+                st.info(f"This specific data trend falls into **Cluster Group / Node: {predicted_cluster}**")
 elif menu == "🏷️ KNN Classification":
     st.markdown("<h2 style='color: #059669;'>🏷️ KNN Classification Core Pipeline</h2>", unsafe_allow_html=True)
     st.markdown("---")
@@ -175,27 +203,44 @@ elif menu == "🏷️ KNN Classification":
         
         k_neighbors = st.slider("Set Neighbors Concentration Bound (K)", min_value=1, max_value=15, value=5)
         
-        if st.button("Execute Vectorized KNN Classifier") and x_cols:
+        if x_cols:
             working_df = df[x_cols + [y_col]].dropna()
             X = working_df[x_cols]
             y = working_df[y_col]
             
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size_user, random_state=0)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_user, random_state=0)
             
-            knn = KNeighborsClassifier(n_neighbors=k_neighbors)
-            knn.fit(X_train, y_train)
-            preds = knn.predict(X_test)
+            scaler_knn = StandardScaler()
+            X_train_scaled = scaler_knn.fit_transform(X_train)
+            X_test_scaled = scaler_knn.transform(X_test)
             
-            st.markdown("### 🏆 Prediction Quality Matrix")
-            st.metric("Aggregate Evaluation Classification Accuracy", f"{accuracy_score(y_test, preds)*100:.2f}%")
+            model_knn = KNeighborsClassifier(n_neighbors=k_neighbors)
+            model_knn.fit(X_train_scaled, y_train)
+            preds = model_knn.predict(X_test_scaled)
             
-            st.markdown("### 📝 Detailed Boundary Distribution Output")
-            st.text_area("Vector Evaluation Metrics Matrix", str(classification_report(y_test, preds, output_dict=False)), height=200)
+            if st.button("Execute Vectorized KNN Classifier"):
+                st.markdown("### 🏆 Performance Matrix")
+                st.metric("Model Accuracy Score", f"{accuracy_score(y_test, preds):.4f}")
+                
+                st.markdown("### 📝 Detailed Classification Report")
+                report_dict = classification_report(y_test, preds, output_dict=True)
+                report_df = pd.DataFrame(report_dict).transpose()
+                st.dataframe(report_df, use_container_width=True)
+
+            # NAYA FEATURE: Interactive Category Class Predictor
+            st.markdown("---")
+            st.markdown("### 🔮 Live Categorical Class Predictor")
             
-            if len(x_cols) >= 2:
-                fig_knn, ax_knn = plt.subplots(figsize=(10, 5))
-                sns.scatterplot(x=X.iloc[:, 0], y=X.iloc[:, 1], hue=y, palette='Dark2', s=100, alpha=0.8)
-                plt.grid(True, linestyle='--', alpha=0.4)
-                st.pyplot(fig_knn)
+            user_inputs_knn = {}
+            for col in x_cols:
+                min_val = float(X[col].min())
+                max_val = float(X[col].max())
+                mean_val = float(X[col].mean())
+                user_inputs_knn[col] = st.number_input(f"Enter Value for '{col}'", value=mean_val, key=f"knn_{col}")
+            
+            if st.button("Predict Target Category"):
+                input_df = pd.DataFrame([user_inputs_knn])
+                input_scaled = scaler_knn.transform(input_df)
+                predicted_class = model_knn.predict(input_scaled)[0]
+                st.success(f"Predicted **{y_col}** Category is: **{predicted_class}**")
+
