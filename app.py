@@ -81,8 +81,8 @@ elif menu == "📈 Linear Regression":
             
             if x_cols:
                 working_df = df[x_cols + [y_col]].dropna()
-                X = working_df[x_cols].values
-                y = working_df[y_col].values
+                X = np.array(working_df[x_cols], dtype=np.float64)
+                y = working_df[y_col].tolist() # Plain list conversion to bypass PyArrow index bugs
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_user, random_state=0)
                 
                 X_train_sm = sm.add_constant(X_train)
@@ -94,7 +94,7 @@ elif menu == "📈 Linear Regression":
                     st.markdown("### 🔮 Live Interactive Prediction Calculator")
                     feature_name = x_cols[0]
                     intercept_val = ols_model.params[0]
-                    coefficient_val = ols_model.params[1]
+                    coefficient_val = ols_model.params[1] if len(ols_model.params) > 1 else 0.0
                     
                     user_input_val = st.number_input(f"Set Custom Input Value for {feature_name}:", value=float(np.mean(X_test)))
                     predicted_outcome = (coefficient_val * user_input_val) + intercept_val
@@ -121,7 +121,7 @@ elif menu == "🎯 K-Means Clustering":
         if x_cols and len(x_cols) >= 2:
             working_df = df[x_cols].dropna()
             scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(working_df.values)
+            X_scaled = scaler.fit_transform(np.array(working_df, dtype=np.float64))
             
             distortions = []
             max_k = min(10, len(working_df))
@@ -156,17 +156,17 @@ elif menu == "🏷️ KNN Core Engine":
         
         if st.button("Run KNN Model Pipeline") and x_cols:
             working_df = df[x_cols + [y_col]].dropna()
-            
             X_raw = working_df[x_cols].select_dtypes(include=[np.number])
+            
             if X_raw.empty:
                 st.error("Please ensure you select at least one numeric feature for training.")
             else:
                 scaler = StandardScaler()
-                X_scaled = scaler.fit_transform(X_raw.values) # 👈 Raw `.values` extraction to completely bypass Python 3.14 unique tracker errors
-                y_raw = working_df[y_col].values
+                X_scaled = scaler.fit_transform(np.array(X_raw, dtype=np.float64))
+                y_list = working_df[y_col].tolist() # 👈 Extracted to plain Python list to permanently avoid pyarrow index boundaries crash
                 
-                is_classification = (working_df[y_col].dtype == 'object') or (len(np.unique(y_raw)) <= 10)
-                X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_raw, test_size=test_size_user, random_state=0)
+                is_classification = (working_df[y_col].dtype == 'object') or (len(np.unique(y_list)) <= 10)
+                X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_list, test_size=test_size_user, random_state=0)
                 
                 if is_classification:
                     st.info("ℹ️ Target variable detected as **Categorical**. Running **KNN Classification Pipeline**.")
@@ -179,6 +179,6 @@ elif menu == "🏷️ KNN Core Engine":
                     st.info("ℹ️ Target variable detected as **Continuous Numbers**. Running **KNN Regression Pipeline**.")
                     knn = KNeighborsRegressor(n_neighbors=k_neighbors)
                     knn.fit(X_train, y_train)
-                    preds = knn.predict(X_test) # 👈 Fixes internal predict dimensions crash on Python 3.14 
+                    preds = knn.predict(X_test)
                     st.metric("Model R² Prediction Score", f"{r2_score(y_test, preds):.4f}")
                     st.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
