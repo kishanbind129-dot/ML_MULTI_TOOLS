@@ -6,7 +6,7 @@ import seaborn as sns
 import os
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classification_report
