@@ -118,8 +118,7 @@ if menu == "🏠 Dashboard Home":
             num_count = len(df.select_dtypes(include=[np.number]).columns)
             cat_count = len(df.select_dtypes(exclude=[np.number]).columns)
             st.info(f"Feature Breakdown: {num_count} Numerical columns | {cat_count} Categorical columns")
-
-elif menu == "📈 Linear Regression":
+            elif menu == "📈 Linear Regression":
     st.markdown("<h2 style='color: #2563EB;'>📈 Linear Regression Pipeline</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
@@ -135,7 +134,7 @@ elif menu == "📈 Linear Regression":
             y_col = st.selectbox("Select Target Variable (Y)", numeric_cols)
             x_cols = st.multiselect("Select Independent Features (X)", [c for c in numeric_cols if c != y_col])
             
-            if st.button("Execute Linear Regression") and x_cols:
+            if x_cols:
                 working_df = df[x_cols + [y_col]].dropna()
                 X = working_df[x_cols]
                 y = working_df[y_col]
@@ -146,22 +145,27 @@ elif menu == "📈 Linear Regression":
                 model.fit(X_train, y_train)
                 preds = model.predict(X_test)
                 
-                st.markdown("### 🏆 Performance Matrix")
-                col1, col2 = st.columns(2)
-                col1.metric("R² Prediction Accuracy", f"{r2_score(y_test, preds):.4f}")
-                col2.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
+                # 🟢 STABLE TABS STRUCTURAL FIX: Separated execution states to prevent input data flush
+                tab1, tab2 = st.tabs(["📊 Model Performance & Analytics", "🔮 Live Value Trend Predictor"])
                 
-                if len(x_cols) == 1:
-                    st.markdown("### 📊 Continuous Fitting Trend")
-                    fig, ax = plt.subplots(figsize=(10, 5))
-                    plt.scatter(X_test, y_test, color='#2563EB', alpha=0.7, label='Actual Values')
-                    plt.plot(X_test, preds, color='#EF4444', linewidth=3, label='Optimal Fit Line')
-                    plt.xlabel(x_cols[0])
-                    plt.ylabel(y_col)
-                    plt.grid(True, linestyle='--', alpha=0.5)
-                    plt.legend()
-                    st.pyplot(fig)
-                if len(x_cols) > 1:
+                with tab1:
+                    st.markdown("### 🏆 Performance Matrix")
+                    col1, col2 = st.columns(2)
+                    col1.metric("R² Prediction Accuracy", f"{r2_score(y_test, preds):.4f}")
+                    col2.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
+                    
+                    if len(x_cols) == 1:
+                        st.markdown("### 📊 Continuous Fitting Trend")
+                        fig, ax = plt.subplots(figsize=(10, 5))
+                        plt.scatter(X_test.iloc[:, 0], y_test, color='#2563EB', alpha=0.7, label='Actual Values')
+                        plt.plot(X_test.iloc[:, 0], preds, color='#EF4444', linewidth=3, label='Optimal Fit Line')
+                        plt.xlabel(x_cols[0])
+                        plt.ylabel(y_col)
+                        plt.grid(True, linestyle='--', alpha=0.5)
+                        plt.legend()
+                        st.pyplot(fig)
+
+                    if len(x_cols) > 1:
                         st.markdown("### 📊 Driver Analysis (Feature Importance)")
                         fig_imp, ax_imp = plt.subplots(figsize=(10, max(3, len(x_cols) * 0.6)))
                         importance_df = pd.DataFrame({
@@ -175,23 +179,27 @@ elif menu == "📈 Linear Regression":
                         plt.title("Which feature changes impact the trend line most? (Blue=Positive, Red=Negative)", fontsize=10)
                         plt.grid(True, linestyle='--', alpha=0.3)
                         st.pyplot(fig_imp)
-                st.markdown("---")
-                st.markdown("### Live Trend predictor")
-                st.info("Enter values for feature to predict the Trend / Target variable.")
-                user_inputs = {}
-                for col in x_cols:
-                    min_val = float(X[col].min())
-                    max_val = float(X[col].max())
-                    mean_val = float(X[col].mean())
-                    user_inputs[col] = st.number_input(f"Enter Value for '{col}' (Range: {min_val:.2f} - {max_val:.2f})", value=mean_val)
-                
-                if st.button("Predict Target Value"):
-                    input_df = pd.DataFrame([user_inputs])
-                    if input_df.isin([np.inf, -np.inf, np.nan]).any().any() or (input_df.abs() > 1e12).any().any():
-                        st.error("Malicious Input Detected: Non-finite or extreme overflow numbers blocked.")
-                    else:
-                        predicted_val = model.predict(input_df)[0]
-                        st.success(f"Estimated **{y_col}** value will be: **{predicted_val:.2f}**")
+
+                with tab2:
+                    st.markdown("### 🔮 Live Interactive Trend Predictor")
+                    st.info("Enter values for features below to see the calculated live trend output instantly.")
+                    
+                    user_inputs = {}
+                    for col in x_cols:
+                        min_val = float(X[col].min())
+                        max_val = float(X[col].max())
+                        mean_val = float(X[col].mean())
+                        user_inputs[col] = st.number_input(f"Enter Value for '{col}' (Range: {min_val:.2f} - {max_val:.2f})", value=mean_val)
+                    
+                    if st.button("Predict Target Value", key="lr_live_predict_btn"):
+                        input_df = pd.DataFrame([user_inputs])
+                        
+                        if input_df.isin([np.inf, -np.inf, np.nan]).any().any() or (input_df.abs() > 1e12).any().any():
+                            st.error("Malicious Input Detected: Non-finite or extreme overflow numbers blocked.")
+                        else:
+                            predicted_val = model.predict(input_df)
+                            st.success(f"🎯 Estimated **{y_col}** value will be: **{predicted_val[0]:.4f}**")
+
 
 elif menu == "🎯 K-Means Clustering":
     st.markdown("<h2 style='color: #7C3AED;'>🎯 K-Means Clustering Core Engine</h2>", unsafe_allow_html=True)
