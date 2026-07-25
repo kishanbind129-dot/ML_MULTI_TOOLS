@@ -191,8 +191,8 @@ elif menu == "🎯 K-Means Clustering":
             k_choice = st.slider("Select Target Hyperparameter (K)", min_value=2, max_value=max_k, value=3)
             
             if st.button("Generate Partition Clusters"):
-                kmeans = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
-                clusters = kmeans.fit_predict(X_scaled)
+                kmeanModel = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
+                clusters = kmeanModel.fit_predict(X_scaled)
                 st.success(f"Mathematical structural optimization split completed into {k_choice} separate nodes.")
                 
                 fig_cluster, ax_cluster = plt.subplots(figsize=(10, 5))
@@ -212,7 +212,7 @@ elif menu == "🎯 K-Means Clustering":
             if st.button("Identify Data Cluster"):
                 input_df = pd.DataFrame([user_inputs_cluster])
                 input_scaled = scaler.transform(input_df)
-                predicted_cluster = kmeans.predict(input_scaled)[0]
+                predicted_cluster = kmeanModel.predict(input_scaled)[0]
                 st.info(f"This specific data trend falls into **Cluster Group / Node: {predicted_cluster}**")
 elif menu == "🏷️ KNN Classification":
     st.markdown("<h2 style='color: #059669;'>🏷️ KNN Classification Core Pipeline</h2>", unsafe_allow_html=True)
