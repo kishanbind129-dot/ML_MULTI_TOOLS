@@ -72,16 +72,18 @@ if menu == "🏠 Dashboard Home":
                     break
             
             raw_df = pd.concat(chunks, ignore_index=True)
-            
             if raw_df.empty:
                 st.error("Invalid Target: File contains no readable structural elements.")
                 st.stop()
                 
-            # Column Sanitization against code/script injection vectors
             sanitized_cols = [str(col).replace('{','').replace('}','').replace('[','').replace(']','').replace('<','').replace('>','')[:32] for col in raw_df.columns]
             raw_df.columns = sanitized_cols
-        st.session_state['data'] = pd.read_csv(uploaded_file)
-        st.success("Dataset successfully authenticated and loaded into secure cache.")
+            
+            st.session_state['data'] = raw_df
+            st.success("Large Dataset authenticated, optimized via chunking partitions, and loaded successfully.")
+        except Exception:
+            st.error("Parser Error: Malformed file data engine rejected.")
+            st.stop()
             
     if st.session_state['data'] is not None:
         df = st.session_state['data']
