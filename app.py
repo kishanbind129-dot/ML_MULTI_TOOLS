@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classification_report
@@ -21,7 +20,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Global Under Construction Intercept Filter
 if UNDER_CONSTRUCTION:
     st.warning("🚧 **Notice:** System Maintenance Active. The application is currently under construction. Please check back shortly!")
     st.stop()
@@ -91,7 +89,15 @@ elif menu == "📈 Linear Regression":
                 X = df_numeric[x_cols].values
                 y = df_numeric[y_col].values
                 
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_user, random_state=0)
+                num_samples = len(X)
+                indices = np.arange(num_samples)
+                np.random.seed(0)
+                np.random.shuffle(indices)
+                split_idx = int(num_samples * (1 - test_size_user))
+                train_idx, test_idx = indices[:split_idx], indices[split_idx:]
+                
+                X_train, X_test = X[train_idx], X[test_idx]
+                y_train, y_test = y[train_idx], y[test_idx]
                 
                 X_train_sm = sm.add_constant(X_train)
                 X_test_sm = sm.add_constant(X_test, has_constant='add')
@@ -177,7 +183,16 @@ elif menu == "🏷️ KNN Classification":
             
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X)
-            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size_user, random_state=0)
+            
+            num_samples = len(X_scaled)
+            indices = np.arange(num_samples)
+            np.random.seed(0)
+            np.random.shuffle(indices)
+            split_idx = int(num_samples * (1 - test_size_user))
+            train_idx, test_idx = indices[:split_idx], indices[split_idx:]
+            
+            X_train, X_test = X_scaled[train_idx], X_scaled[test_idx]
+            y_train, y_test = y[train_idx], y[test_idx]
             
             dists = cdist(X_test, X_train, metric='euclidean')
             nearest_indices = np.argsort(dists, axis=1)[:, :k_neighbors]
@@ -194,9 +209,4 @@ elif menu == "🏷️ KNN Classification":
                 
                 st.metric("Custom Evaluation Accuracy", f"{accuracy_score(y_test_str, preds)*100:.2f}%")
                 st.text_area("Detailed Metrics Report", str(classification_report(y_test_str, preds)), height=200)
-            else:
-                st.info("ℹ️ Target variable detected as **Continuous Numbers**. Running custom Vectorized Regression Pipeline.")
-                preds = np.mean(y_train[nearest_indices], axis=1)
-                
-                st.metric("Model R² Prediction Score", f"{r2_score(y_test, preds):.4f}")
-                st.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
+    
