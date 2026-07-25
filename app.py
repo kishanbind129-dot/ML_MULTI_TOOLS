@@ -191,4 +191,4 @@ elif menu == "🎯 K-Means Clustering":
                 
                 fig_cluster, ax_cluster = plt.subplots(figsize=(10, 5))
                 sns.scatterplot(x=working_df.iloc[:, 0], y=working_df.iloc[:, 1], hue=working_df['Cluster_Output'], palette='viridis', s=120, alpha=0.8)
-                plt.grid(True, linestyle='--', alpha=0.4)v
+                plt.grid(True, linestyle='--', alpha=0.4)
