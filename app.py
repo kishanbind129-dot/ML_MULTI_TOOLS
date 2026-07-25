@@ -8,11 +8,11 @@ import time
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classification_report
 from scipy.spatial.distance import cdist
+import statsmodels.api as sm
 
 st.set_page_config(
     page_title="AI Multi-Tool Hub", 
@@ -86,32 +86,60 @@ elif menu == "📈 Linear Regression":
             y_col = st.selectbox("Select Target Variable (Y)", numeric_cols)
             x_cols = st.multiselect("Select Independent Features (X)", [c for c in numeric_cols if c != y_col])
             
-            if st.button("Execute Linear Regression") and x_cols:
+            if x_cols:
                 working_df = df[x_cols + [y_col]].dropna()
                 X = working_df[x_cols]
                 y = working_df[y_col]
                 
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_user, random_state=0)
                 
-                model = LinearRegression()
-                model.fit(X_train, y_train)
-                preds = model.predict(X_test)
-                
-                st.markdown("### 🏆 Performance Matrix")
-                col1, col2 = st.columns(2)
-                col1.metric("R² Prediction Accuracy", f"{r2_score(y_test, preds):.4f}")
-                col2.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
+                X_train_sm = sm.add_constant(X_train)
+                X_test_sm = sm.add_constant(X_test, has_constant='add')
+                ols_model = sm.OLS(y_train, X_train_sm).fit()
+                preds = ols_model.predict(X_test_sm)
                 
                 if len(x_cols) == 1:
-                    st.markdown("### 📊 Continuous Fitting Trend")
-                    fig, ax = plt.subplots(figsize=(10, 5))
-                    plt.scatter(X_test, y_test, color='#2563EB', alpha=0.7, label='Actual Values')
-                    plt.plot(X_test, preds, color='#EF4444', linewidth=3, label='Optimal Fit Line')
-                    plt.xlabel(x_cols[0])
-                    plt.ylabel(y_col)
-                    plt.grid(True, linestyle='--', alpha=0.5)
-                    plt.legend()
-                    st.pyplot(fig)
+                    st.markdown("### 🔮 Live Interactive Prediction Calculator")
+                    feature_name = x_cols[0]
+                    intercept_val = ols_model.params['const']
+                    coefficient_val = ols_model.params[feature_name]
+                    p_val = ols_model.pvalues[feature_name]
+                    
+                    user_input_val = st.number_input(f"Set Custom Input Value for {feature_name}:", value=float(X_test[feature_name].mean()))
+                    predicted_outcome = (coefficient_val * user_input_val) + intercept_val
+                    
+                    st.success(f"💡 **Statement:** Agar **{feature_name}** ki value **{user_input_val:.2f}** hogi, toh **{y_col}** ki estimated value **{predicted_outcome:.2f}** hogi!")
+                
+                if st.button("Execute Detailed Analysis"):
+                    st.markdown("### 🏆 Performance Matrix")
+                    col1, col2 = st.columns(2)
+                    col1.metric("R² Prediction Accuracy", f"{r2_score(y_test, preds):.4f}")
+                    col2.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
+                    
+                    st.markdown("### 📋 Detailed OLS Regression Statistical Summary")
+                    st.text_area("OLS Summary Report Table", str(ols_model.summary()), height=350)
+                    
+                    if len(x_cols) == 1:
+                        st.markdown("### 🔍 Automated Trend Analysis Insights")
+                        if coefficient_val > 0:
+                            trend_dir = "Positive Upward Trend 📈"
+                            trend_desc = f"As **{feature_name}** increases, **{y_col}** also increases dynamically."
+                        else:
+                            trend_dir = "Negative Downward Trend 📉"
+                            trend_desc = f"As **{feature_name}** increases, **{y_col}** decreases proportionally."
+                            
+                        sig_status = "Statistically Significant ✅" if p_val < 0.05 else "Not Statistically Significant ⚠️"
+                        st.info(f"**Detected Relationship:** {trend_dir}\n\n{trend_desc}\n\n**Confidence Level:** {sig_status} (P-value: {p_val:.5f})")
+                        
+                        st.markdown("### 📊 Continuous Fitting Trend Plot")
+                        fig, ax = plt.subplots(figsize=(10, 5))
+                        plt.scatter(X_test, y_test, color='#2563EB', alpha=0.7, label='Actual Values')
+                        plt.plot(X_test, preds, color='#EF4444', linewidth=3, label='Optimal Fit Line')
+                        plt.xlabel(feature_name)
+                        plt.ylabel(y_col)
+                        plt.grid(True, linestyle='--', alpha=0.5)
+                        plt.legend()
+                        st.pyplot(fig)
 
 elif menu == "🎯 K-Means Clustering":
     st.markdown("<h2 style='color: #7C3AED;'>🎯 K-Means Clustering Core Engine</h2>", unsafe_allow_html=True)
@@ -172,30 +200,3 @@ elif menu == "🏷️ KNN Classification":
         
         y_col = st.selectbox("Select Target Categorical Class (Y)", all_cols)
         x_cols = st.multiselect("Select Training Numerical Predictors (X)", [c for c in numeric_cols if c != y_col])
-        
-        k_neighbors = st.slider("Set Neighbors Concentration Bound (K)", min_value=1, max_value=15, value=5)
-        
-        if st.button("Execute Vectorized KNN Classifier") and x_cols:
-            working_df = df[x_cols + [y_col]].dropna()
-            X = working_df[x_cols]
-            y = working_df[y_col]
-            
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size_user, random_state=0)
-            
-            knn = KNeighborsClassifier(n_neighbors=k_neighbors)
-            knn.fit(X_train, y_train)
-            preds = knn.predict(X_test)
-            
-            st.markdown("### 🏆 Prediction Quality Matrix")
-            st.metric("Aggregate Evaluation Classification Accuracy", f"{accuracy_score(y_test, preds)*100:.2f}%")
-            
-            st.markdown("### 📝 Detailed Boundary Distribution Output")
-            st.text_area("Vector Evaluation Metrics Matrix", str(classification_report(y_test, preds, output_dict=False)), height=200)
-            
-            if len(x_cols) >= 2:
-                fig_knn, ax_knn = plt.subplots(figsize=(10, 5))
-                sns.scatterplot(x=X.iloc[:, 0], y=X.iloc[:, 1], hue=y, palette='Dark2', s=100, alpha=0.8)
-                plt.grid(True, linestyle='--', alpha=0.4)
-                st.pyplot(fig_knn)
