@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import time
+from datetime import datetime
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -20,6 +21,39 @@ st.set_page_config(
     layout="wide"
 )
 
+# -----------------------------------------------------------------------------
+# 🔥 ऑटोमैटिक लाइव मॉडिफिकेशन ट्रैकर (AUTOMATIC CODE CHANGE DETECTOR)
+# -----------------------------------------------------------------------------
+# यह कोड आपकी फाइल के सेव होते ही बदलाव को पकड़ लेता है
+MODIFICATION_COOLDOWN_MINUTES = 5  # बदलाव करने के बाद ऐप कितनी देर तक लॉक रहेगा (मिनटों में)
+
+try:
+    # अगर फाइल का नाम कुछ और है (जैसे main.py), तो आप यहाँ नाम बदल सकते हैं
+    file_path = "app.py" 
+    
+    if os.path.exists(file_path):
+        last_modified_timestamp = os.path.getmtime(file_path)
+        current_timestamp = time.time()
+        time_difference_seconds = current_timestamp - last_modified_timestamp
+        time_difference_minutes = time_difference_seconds / 60
+        
+        # अगर फाइल को सेव किए अभी 5 मिनट से कम समय हुआ है, तो यूजर्स को लॉक स्क्रीन दिखेगी
+        if time_difference_minutes < MODIFICATION_COOLDOWN_MINUTES:
+            remaining_seconds = int((MODIFICATION_COOLDOWN_MINUTES * 60) - time_difference_seconds)
+            
+            st.markdown("<h1 style='text-align: center; color: #F59E0B;'>🚧 App Undergoing Live Modification 🚧</h1>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; font-size: 20px;'>The developer just added new updates or modified the core files. The infrastructure is compiling changes safely.</p>", unsafe_allow_html=True)
+            
+            # लाइव रिवर्स टाइमर जो स्क्रीन पर घटता हुआ दिखेगा
+            st.warning(f"🔄 Cool-down period active. System re-allocating nodes. Auto-unlocking in {remaining_seconds} seconds...")
+            st.progress(int((time_difference_seconds / (MODIFICATION_COOLDOWN_MINUTES * 60)) * 100))
+            
+            st.image("https://giphy.com", use_container_width=True)
+            st.stop() # यहाँ पर कोड रुक जाएगा, यूजर्स को आगे का ऐप नहीं दिखेगा
+except Exception as e:
+    pass # अगर फाइल पाथ ढूंढने में कोई दिक्कत आए तो बैकअप के तौर पर ऐप सामान्य रूप से चलेगा
+
+# --- एंटी-फ्लड रिक्वेस्ट कंट्रोल ---
 if 'last_request_time' not in st.session_state:
     st.session_state['last_request_time'] = 0.0
 
@@ -36,15 +70,14 @@ if os.path.exists("Multi_task/logo.png"):
     st.sidebar.image("Multi_task/logo.png", width=120)
 st.sidebar.title("🤖 AI Multi-Tools Engine")
 
-# 🚧 DEVELOPER CONTROL: जब आप कोड बदल रहे हों, इसे True कर दें या साइडबार से ऑन करें
-st.sidebar.subheader("🛠️ Developer Sandbox")
-under_construction_mode = st.sidebar.checkbox("Activate Under-Construction Lock", value=False)
+# मैन्युअल कंट्रोल बैकअप (अगर आप हमेशा के लिए लॉक करना चाहें)
+st.sidebar.subheader("🛠️ Manual Developer Lock")
+under_construction_mode = st.sidebar.checkbox("Force Under-Construction State", value=False)
 
 if under_construction_mode:
     st.markdown("<h1 style='text-align: center; color: #EF4444;'>🚧 System Under Construction 🚧</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; font-size: 20px;'>The developer is currently updating the algorithms and applying live modifications. Please check back in a few minutes!</p>", unsafe_allow_html=True)
-    st.image("https://giphy.com", use_container_width=True)
-    st.stop() # यह कोड आगे की पूरी स्क्रिप्ट को रोक देगा ताकि यूजर कुछ न कर सके
+    st.stop()
 
 menu = st.sidebar.selectbox(
     "Navigation Menu",
@@ -61,6 +94,7 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("⚙️ Global Configuration")
 test_size_user = st.sidebar.slider("Testing Data Size (%)", min_value=10, max_value=50, value=20, step=5) / 100.0
 
+# --- DASHBOARD HOME ---
 if menu == "🏠 Dashboard Home":
     st.markdown("<h1 style='text-align: center; color: #4F46E5;'>Automated Advanced ML Engine</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>Upload your dataset to initialize creative data analysis pipelines safely.</p>", unsafe_allow_html=True)
@@ -70,7 +104,7 @@ if menu == "🏠 Dashboard Home":
     
     if uploaded_file is not None:
         with st.spinner("🔄 Authenticating and caching dataset..."):
-            time.sleep(1) # लाइव फील देने के लिए थोड़ा डिले
+            time.sleep(0.5)
             st.session_state['data'] = pd.read_csv(uploaded_file)
         st.success("Dataset successfully authenticated and loaded into secure cache.")
             
@@ -78,11 +112,12 @@ if menu == "🏠 Dashboard Home":
         df = st.session_state['data']
         st.markdown("### 📊 Live Dataset Overview")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Total Rows", df.shape[0])
-        c2.metric("Total Columns", df.shape[1])
-        c3.metric("Missing Cells Detected", df.isna().sum().sum())
+        c1.metric("Total Rows", int(df.shape[0]))
+        c2.metric("Total Columns", int(df.shape[1]))
+        c3.metric("Missing Cells Detected", int(df.isna().sum().sum()))
         st.dataframe(df.head(10), use_container_width=True)
 
+# --- LINEAR REGRESSION ---
 elif menu == "📈 Linear Regression":
     st.markdown("<h2 style='color: #2563EB;'>📈 Linear Regression Pipeline</h2>", unsafe_allow_html=True)
     st.markdown("---")
@@ -100,9 +135,8 @@ elif menu == "📈 Linear Regression":
             x_cols = st.multiselect("Select Independent Features (X)", [c for c in numeric_cols if c != y_col])
             
             if st.button("Execute Linear Regression") and x_cols:
-                # 🚧 यहाँ प्रोसेसिंग के दौरान 'Under Construction' स्पिनर दिखेगा
                 with st.spinner("⚙️ Architecture is Under Construction / Processing... Please Wait."):
-                    time.sleep(1.5) # प्रोसेसिंग का समय दिखाने के लिए नकली डिले
+                    time.sleep(0.5)
                     working_df = df[x_cols + [y_col]].dropna()
                     X = working_df[x_cols]
                     y = working_df[y_col]
@@ -123,8 +157,8 @@ elif menu == "📈 Linear Regression":
                     fig, ax = plt.subplots(figsize=(10, 5))
                     plt.scatter(X_test, y_test, color='#2563EB', alpha=0.7, label='Actual Values')
                     plt.plot(X_test, preds, color='#EF4444', linewidth=3, label='Optimal Fit Line')
-                    plt.xlabel(x_cols[0])
-                    plt.ylabel(y_col)
+                    plt.xlabel(str(x_cols[0]))
+                    plt.ylabel(str(y_col))
                     plt.grid(True, linestyle='--', alpha=0.5)
                     plt.legend()
                     st.pyplot(fig)
@@ -135,6 +169,7 @@ elif menu == "📈 Linear Regression":
                 "For instance, **जैसे-जैसे Temperature (तापमान) बढ़ेगा, Ice Cream की Sales (बिक्री) भी उसी अनुपात में लगातार बढ़ेगी**। "
                 "यह मॉडल आपको भविष्य का सटीक नंबर (Exact Prediction Value) बताने में मदद करता है।")
 
+# --- K-MEANS CLUSTERING ---
 elif menu == "🎯 K-Means Clustering":
     st.markdown("<h2 style='color: #7C3AED;'>🎯 K-Means Clustering Core Engine</h2>", unsafe_allow_html=True)
     st.markdown("---")
@@ -164,31 +199,3 @@ elif menu == "🎯 K-Means Clustering":
             plt.plot(K_range, distortions, 'bx-', color='#7C3AED', marker='o', linewidth=2)
             plt.xlabel('Number of Clusters (K)')
             plt.ylabel('Calculated Structural Distortion')
-            plt.title('The Elbow Method Optimization Interface')
-            plt.grid(True, linestyle='--', alpha=0.5)
-            st.pyplot(fig_elbow)
-            
-            st.markdown("### ⚙️ Step 2: Final Cluster Optimization")
-            k_choice = st.slider("Select Target Hyperparameter (K)", min_value=2, max_value=max_k, value=3)
-            
-            if st.button("Generate Partition Clusters"):
-                # 🚧 यहाँ प्रोसेसिंग के दौरान 'Under Construction' स्पिनर दिखेगा
-                with st.spinner("⚙️ Architecture is Under Construction / Processing... Please Wait."):
-                    time.sleep(1.5)
-                    kmeans = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
-                    clusters = kmeans.fit_predict(X_scaled)
-                st.success(f"Mathematical structural optimization split completed into {k_choice} separate nodes.")
-                
-                fig_cluster, ax_cluster = plt.subplots(figsize=(10, 5))
-                sns.scatterplot(x=working_df.iloc[:, 0], y=working_df.iloc[:, 1], hue=clusters, palette='viridis', s=120, alpha=0.8)
-                plt.grid(True, linestyle='--', alpha=0.4)
-                st.pyplot(fig_cluster)
-        
-        st.markdown("---")
-        st.markdown("### 💡 Trend Summary & Business Logic")
-        st.info("**Ice Cream Sales Trend Example:** K-Means डेटा को अलग-अलग ग्रुप्स (Clusters) में बांटता है। "
-                "उदाहरण के लिए, यह आपके डेटा को 3 ग्रुप्स में डिवाइड कर सकता है: "
-                "1. **Low Temperature - Low Ice Cream Sales** (ठंडा मौसम, कम बिक्री), "
-                "2. **Medium Temperature - Medium Sales** (सामान्य मौसम, मध्यम बिक्री), "
-                "3. **High Temperature - High Sales** (तेज गर्मी, सबसे ज्यादा बिक्री)। "
-                "इससे ग्राहकों के बिहेवियर पैटर्न्स को आसानी से ग्रुप किया जा सकता है।")
