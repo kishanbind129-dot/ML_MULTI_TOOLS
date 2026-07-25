@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-import time
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -14,11 +13,19 @@ from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classi
 from scipy.spatial.distance import cdist
 import statsmodels.api as sm
 
+# 🚧 LIVE NOTICE ENGINE (Set True when updating code, Set False when fully done)
+UNDER_CONSTRUCTION = False
+
 st.set_page_config(
     page_title="AI Multi-Tool Hub", 
     page_icon="Multi_task/logo.png", 
     layout="wide"
 )
+
+# Global Under Construction Intercept Filter
+if UNDER_CONSTRUCTION:
+    st.warning("🚧 **Notice:** System Maintenance Active. The application is currently under construction for rolling out major upgrades. Algorithms are temporarily offline. Please check back shortly!")
+    st.stop()
 
 if 'data' not in st.session_state:
     st.session_state['data'] = None
@@ -124,8 +131,8 @@ elif menu == "📈 Linear Regression":
                         
                         st.markdown("### 📊 Continuous Fitting Trend Plot")
                         fig, ax = plt.subplots(figsize=(10, 5))
-                        plt.scatter(X_test, y_test, color='#2563EB', alpha=0.7, label='Actual Values')
-                        plt.plot(X_test, preds, color='#EF4444', linewidth=3, label='Optimal Fit Line')
+                        plt.scatter(X_test[feature_name], y_test, color='#2563EB', alpha=0.7, label='Actual Values')
+                        plt.plot(X_test[feature_name], preds, color='#EF4444', linewidth=3, label='Optimal Fit Line')
                         plt.xlabel(feature_name)
                         plt.ylabel(y_col)
                         plt.grid(True, linestyle='--', alpha=0.5)
@@ -171,23 +178,17 @@ elif menu == "🎯 K-Means Clustering":
             if st.button("Generate Partition Clusters"):
                 kmeans = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
                 clusters = kmeans.fit_predict(X_scaled)
+                working_df['Cluster_Output'] = clusters
                 st.success(f"Mathematical structural optimization split completed into {k_choice} separate nodes.")
                 
+                # 🔍 CLUSTERING TREND INTERPRETATION ENGINE
+                st.markdown("### 🔍 Automated Cluster Trend Interpretation")
+                cluster_means = working_df.groupby('Cluster_Output').mean()
+                trend_text = "Following data trends were identified within distinct density regions:\n\n"
+                for idx, row in cluster_means.iterrows():
+                    trend_text += f"* **Group/Cluster {idx}:** Density centers around "
+                    trend_text += ", ".join([f"**{col}** = {row[col]:.2f}" for col in x_cols]) + ".\n"
+                st.info(trend_text)
+                
                 fig_cluster, ax_cluster = plt.subplots(figsize=(10, 5))
-                sns.scatterplot(x=working_df.iloc[:, 0], y=working_df.iloc[:, 1], hue=clusters, palette='viridis', s=120, alpha=0.8)
-                plt.grid(True, linestyle='--', alpha=0.4)
-                st.pyplot(fig_cluster)
-
-elif menu == "🏷️ KNN Classification":
-    st.markdown("<h2 style='color: #059669;'>🏷️ KNN Classification Core Pipeline</h2>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    if st.session_state['data'] is None:
-        st.warning("Please upload a safe CSV file from the 'Dashboard Home' section first.")
-    else:
-        df = st.session_state['data'].copy()
-        all_cols = df.columns.tolist()
-        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-        
-        y_col = st.selectbox("Select Target Categorical Class (Y)", all_cols)
-        x_cols = st.multiselect("Select Training Numerical Predictors (X)", [c for c in numeric_cols if c != y_col])
+                sns.scatterplot(x=working_df.iloc[:, 0], y=working_df.iloc[:, 1], hue=working_df['Cluster_Output'], palette='viridis', s=120, alpha=0.8)
