@@ -62,12 +62,13 @@ if menu == "🏠 Dashboard Home":
         st.success("Dataset successfully authenticated and loaded into secure cache.")
             
     if st.session_state['data'] is not None:
+        df_display = st.session_state['data']
         st.markdown("### 📊 Live Dataset Overview")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Total Rows", int(st.session_state['data'].shape[0]))
-        c2.metric("Total Columns", int(st.session_state['data'].shape[1]))
-        c3.metric("Missing Cells Detected", int(st.session_state['data'].isna().sum().sum()))
-        st.dataframe(st.session_state['data'].head(10), use_container_width=True)
+        c1.metric("Total Rows", int(df_display.shape[0]))
+        c2.metric("Total Columns", int(df_display.shape[1]))
+        c3.metric("Missing Cells Detected", int(df_display.isna().sum().sum()))
+        st.dataframe(df_display.head(10), use_container_width=True)
 
 elif menu == "📈 Linear Regression":
     st.markdown("<h2 style='color: #2563EB;'>📈 Linear Regression Pipeline</h2>", unsafe_allow_html=True)
@@ -174,12 +175,12 @@ elif menu == "🏷️ KNN Classification":
         x_cols = st.multiselect("Select Predictor Features (X)", [c for c in numeric_cols if c != y_col])
         k_neighbors = st.slider("Set Neighbors Concentration Bound (K)", min_value=1, max_value=15, value=5)
         
+        model_mode = st.radio("Select Prediction Task Mode:", ["Classification (For Text/Labels/Categories)", "Regression (For Continuous Decimals/Numbers)"])
+        
         if st.button("Run KNN Model Pipeline") and x_cols:
             working_df = df[x_cols + [y_col]].dropna()
             X = working_df[x_cols].values
             y = working_df[y_col].values
-            
-            is_classification = (working_df[y_col].dtype == 'object') or (working_df[y_col].nunique() <= 10)
             
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X)
@@ -197,8 +198,8 @@ elif menu == "🏷️ KNN Classification":
             dists = cdist(X_test, X_train, metric='euclidean')
             nearest_indices = np.argsort(dists, axis=1)[:, :k_neighbors]
             
-            if is_classification:
-                st.info("ℹ️ Target variable detected as **Categorical**. Running custom Vectorized Classification Pipeline.")
+            if model_mode == "Classification (For Text/Labels/Categories)":
+                st.info("ℹ️ Running manual Vectorized Classification Pipeline.")
                 y_train_str = y_train.astype(str)
                 preds = []
                 for row in nearest_indices:
@@ -208,5 +209,5 @@ elif menu == "🏷️ KNN Classification":
                 y_test_str = y_test.astype(str)
                 
                 st.metric("Custom Evaluation Accuracy", f"{accuracy_score(y_test_str, preds)*100:.2f}%")
-                st.text_area("Detailed Metrics Report", str(classification_report(y_test_str, preds)), height=200)
-    
+                st.text_area("Detailed Metrics Report", str(classification_report(y_test_str, preds, zero_division=0)), height=200)
+        
