@@ -13,11 +13,19 @@ from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classi
 from scipy.spatial.distance import cdist
 import statsmodels.api as sm
 
+# 🚧 LIVE NOTICE ENGINE (Set True when updating code, Set False when fully done)
+UNDER_CONSTRUCTION = False
+
 st.set_page_config(
     page_title="AI Multi-Tool Hub", 
     page_icon="Multi_task/logo.png", 
     layout="wide"
 )
+
+# Global Under Construction Intercept Filter
+if UNDER_CONSTRUCTION:
+    st.warning("🚧 **Notice:** System Maintenance Active. The application is currently under construction for rolling out major upgrades. Algorithms are temporarily offline. Please check back shortly!")
+    st.stop()
 
 if 'data' not in st.session_state:
     st.session_state['data'] = None
@@ -55,8 +63,8 @@ if menu == "🏠 Dashboard Home":
         df = st.session_state['data']
         st.markdown("### 📊 Live Dataset Overview")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Total Rows", df.shape[0])
-        c2.metric("Total Columns", df.shape[1])
+        c1.metric("Total Rows", df.shape)
+        c2.metric("Total Columns", df.shape)
         c3.metric("Missing Cells Detected", df.isna().sum().sum())
         st.dataframe(df.head(10), use_container_width=True)
 
@@ -90,7 +98,7 @@ elif menu == "📈 Linear Regression":
                 
                 if len(x_cols) == 1:
                     st.markdown("### 🔮 Live Interactive Prediction Calculator")
-                    feature_name = x_cols[0]
+                    feature_name = x_cols
                     intercept_val = ols_model.params['const']
                     coefficient_val = ols_model.params[feature_name]
                     p_val = ols_model.pvalues[feature_name]
@@ -154,7 +162,7 @@ elif menu == "🎯 K-Means Clustering":
             
             for k in K_range:
                 kmeanModel = KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_scaled)
-                distortions.append(sum(np.min(cdist(X_scaled, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / X_scaled.shape[0])
+                distortions.append(sum(np.min(cdist(X_scaled, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / X_scaled.shape)
                 
             fig_elbow, ax_elbow = plt.subplots(figsize=(10, 4))
             plt.plot(K_range, distortions, 'bx-', color='#7C3AED', marker='o', linewidth=2)
@@ -185,12 +193,3 @@ elif menu == "🎯 K-Means Clustering":
                 sns.scatterplot(x=working_df.iloc[:, 0], y=working_df.iloc[:, 1], hue=working_df['Cluster_Output'], palette='viridis', s=120, alpha=0.8)
                 plt.grid(True, linestyle='--', alpha=0.4)
                 st.pyplot(fig_cluster)
-
-elif menu == "🏷️ KNN Classification":
-    st.markdown("<h2 style='color: #059669;'>🏷️ KNN Classification Core Pipeline</h2>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    if st.session_state['data'] is None:
-        st.warning("Please upload a safe CSV file from the 'Dashboard Home' section first.")
-    else:
-        df = st.session_state['data'].copy()
