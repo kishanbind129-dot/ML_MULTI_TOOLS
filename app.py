@@ -1,14 +1,13 @@
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
-from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classification_report
 from scipy.spatial.distance import cdist
 import statsmodels.api as sm
@@ -24,7 +23,7 @@ st.set_page_config(
 
 # Global Under Construction Intercept Filter
 if UNDER_CONSTRUCTION:
-    st.warning("🚧 **Notice:** System Maintenance Active. The application is currently under construction. Algorithms are temporarily offline.")
+    st.warning("🚧 **Notice:** System Maintenance Active. The application is currently under construction. Please check back shortly!")
     st.stop()
 
 if 'data' not in st.session_state:
@@ -36,7 +35,12 @@ st.sidebar.title("🤖 AI Multi-Tools Engine")
 
 menu = st.sidebar.selectbox(
     "Navigation Menu",
-    ["🏠 Dashboard Home", "📈 Linear Regression", "🎯 K-Means Clustering", "🏷️ KNN Core Engine"]
+    [
+        "🏠 Dashboard Home",
+        "📈 Linear Regression", 
+        "🎯 K-Means Clustering", 
+        "🏷️ KNN Classification"
+    ]
 )
 
 st.sidebar.markdown("---")
@@ -54,6 +58,7 @@ if menu == "🏠 Dashboard Home":
     st.markdown("---")
     
     uploaded_file = st.file_uploader("Drop your secure CSV file here", type=["csv"])
+    
     if uploaded_file is not None:
         st.session_state['data'] = pd.read_csv(uploaded_file)
         st.success("Dataset successfully authenticated and loaded into secure cache.")
@@ -69,10 +74,13 @@ if menu == "🏠 Dashboard Home":
 elif menu == "📈 Linear Regression":
     st.markdown("<h2 style='color: #2563EB;'>📈 Linear Regression Pipeline</h2>", unsafe_allow_html=True)
     st.markdown("---")
+    
     if df is None:
         st.warning("Please upload a safe CSV file from the 'Dashboard Home' section first.")
     else:
-        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        df_numeric = df.select_dtypes(include=[np.number]).dropna()
+        numeric_cols = df_numeric.columns.tolist()
+        
         if len(numeric_cols) < 2:
             st.error("Dataset lacks sufficient continuous numeric variables for regression analysis.")
         else:
@@ -80,9 +88,9 @@ elif menu == "📈 Linear Regression":
             x_cols = st.multiselect("Select Independent Features (X)", [c for c in numeric_cols if c != y_col])
             
             if x_cols:
-                working_df = df[x_cols + [y_col]].dropna()
-                X = np.array(working_df[x_cols], dtype=np.float64)
-                y = working_df[y_col].tolist() # Plain list conversion to bypass PyArrow index bugs
+                X = df_numeric[x_cols].values
+                y = df_numeric[y_col].values
+                
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_user, random_state=0)
                 
                 X_train_sm = sm.add_constant(X_train)
@@ -112,6 +120,7 @@ elif menu == "📈 Linear Regression":
 elif menu == "🎯 K-Means Clustering":
     st.markdown("<h2 style='color: #7C3AED;'>🎯 K-Means Clustering Core Engine</h2>", unsafe_allow_html=True)
     st.markdown("---")
+    
     if df is None:
         st.warning("Please upload a safe CSV file from the 'Dashboard Home' section first.")
     else:
@@ -121,11 +130,12 @@ elif menu == "🎯 K-Means Clustering":
         if x_cols and len(x_cols) >= 2:
             working_df = df[x_cols].dropna()
             scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(np.array(working_df, dtype=np.float64))
+            X_scaled = scaler.fit_transform(working_df.values)
             
             distortions = []
             max_k = min(10, len(working_df))
             K_range = range(1, max_k + 1)
+            
             for k in K_range:
                 kmeanModel = KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_scaled)
                 distortions.append(sum(np.min(cdist(X_scaled, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / X_scaled.shape[0])
@@ -137,48 +147,56 @@ elif menu == "🎯 K-Means Clustering":
             st.pyplot(fig_elbow)
             
             k_choice = st.slider("Select Target Hyperparameter (K)", min_value=2, max_value=max_k, value=3)
+            
             if st.button("Generate Partition Clusters"):
                 kmeans = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
                 clusters = kmeans.fit_predict(X_scaled)
                 working_df['Cluster_Output'] = clusters
                 st.success(f"Mathematical structural optimization split completed into {k_choice} separate nodes.")
 
-elif menu == "🏷️ KNN Core Engine":
-    st.markdown("<h2 style='color: #059669;'>🏷️ KNN Predictive Modeling Engine</h2>", unsafe_allow_html=True)
+elif menu == "🏷️ KNN Classification":
+    st.markdown("<h2 style='color: #059669;'>🏷️ KNN Predictive Engine (Any Dataset Compatible)</h2>", unsafe_allow_html=True)
     st.markdown("---")
+    
     if df is None:
         st.warning("Please upload a safe CSV file from the 'Dashboard Home' section first.")
     else:
         all_cols = df.columns.tolist()
         y_col = st.selectbox("Select Target Column (Y)", all_cols)
-        x_cols = st.multiselect("Select Predictor Features (X)", [c for c in all_cols if c != y_col])
-        k_neighbors = st.slider("Set K-Neighbors Concentration Bound", min_value=1, max_value=15, value=5)
+        
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        x_cols = st.multiselect("Select Predictor Features (X)", [c for c in numeric_cols if c != y_col])
+        k_neighbors = st.slider("Set Neighbors Concentration Bound (K)", min_value=1, max_value=15, value=5)
         
         if st.button("Run KNN Model Pipeline") and x_cols:
             working_df = df[x_cols + [y_col]].dropna()
-            X_raw = working_df[x_cols].select_dtypes(include=[np.number])
+            X = working_df[x_cols].values
+            y = working_df[y_col].values
             
-            if X_raw.empty:
-                st.error("Please ensure you select at least one numeric feature for training.")
+            is_classification = (working_df[y_col].dtype == 'object') or (working_df[y_col].nunique() <= 10)
+            
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size_user, random_state=0)
+            
+            dists = cdist(X_test, X_train, metric='euclidean')
+            nearest_indices = np.argsort(dists, axis=1)[:, :k_neighbors]
+            
+            if is_classification:
+                st.info("ℹ️ Target variable detected as **Categorical**. Running custom Vectorized Classification Pipeline.")
+                y_train_str = y_train.astype(str)
+                preds = []
+                for row in nearest_indices:
+                    vals, counts = np.unique(y_train_str[row], return_counts=True)
+                    preds.append(vals[np.argmax(counts)])
+                preds = np.array(preds)
+                y_test_str = y_test.astype(str)
+                
+                st.metric("Custom Evaluation Accuracy", f"{accuracy_score(y_test_str, preds)*100:.2f}%")
+                st.text_area("Detailed Metrics Report", str(classification_report(y_test_str, preds)), height=200)
             else:
-                scaler = StandardScaler()
-                X_scaled = scaler.fit_transform(np.array(X_raw, dtype=np.float64))
-                y_list = working_df[y_col].tolist() # 👈 Extracted to plain Python list to permanently avoid pyarrow index boundaries crash
+                st.info("ℹ️ Target variable detected as **Continuous Numbers**. Running custom Vectorized Regression Pipeline.")
+                preds = np.mean(y_train[nearest_indices], axis=1)
                 
-                is_classification = (working_df[y_col].dtype == 'object') or (len(np.unique(y_list)) <= 10)
-                X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_list, test_size=test_size_user, random_state=0)
-                
-                if is_classification:
-                    st.info("ℹ️ Target variable detected as **Categorical**. Running **KNN Classification Pipeline**.")
-                    knn = KNeighborsClassifier(n_neighbors=k_neighbors)
-                    knn.fit(X_train, y_train)
-                    preds = knn.predict(X_test)
-                    st.metric("Model Classification Accuracy", f"{accuracy_score(y_test, preds)*100:.2f}%")
-                    st.text_area("Detailed Report", str(classification_report(y_test, preds)))
-                else:
-                    st.info("ℹ️ Target variable detected as **Continuous Numbers**. Running **KNN Regression Pipeline**.")
-                    knn = KNeighborsRegressor(n_neighbors=k_neighbors)
-                    knn.fit(X_train, y_train)
-                    preds = knn.predict(X_test)
-                    st.metric("Model R² Prediction Score", f"{r2_score(y_test, preds):.4f}")
-                    st.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
+                st.metric("Model R² Prediction Score", f"{r2_score(y_test, preds):.4f}")
+                st.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
