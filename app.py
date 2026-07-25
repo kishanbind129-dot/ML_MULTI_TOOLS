@@ -1,18 +1,18 @@
-import os
 import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+import time
 
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
 from sklearn.cluster import KMeans
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classification_report
 from scipy.spatial.distance import cdist
-import statsmodels.api as sm
-
-# 🚧 LIVE NOTICE ENGINE (Set True when updating code, Set False when fully done)
-UNDER_CONSTRUCTION = False
 
 st.set_page_config(
     page_title="AI Multi-Tool Hub", 
@@ -20,9 +20,14 @@ st.set_page_config(
     layout="wide"
 )
 
-if UNDER_CONSTRUCTION:
-    st.warning("🚧 **Notice:** System Maintenance Active. The application is currently under construction. Please check back shortly!")
+if 'last_request_time' not in st.session_state:
+    st.session_state['last_request_time'] = 0.0
+
+current_time = time.time()
+if current_time - st.session_state['last_request_time'] < 0.5:
+    st.error("Too many rapid requests. Please wait a moment.")
     st.stop()
+st.session_state['last_request_time'] = current_time
 
 if 'data' not in st.session_state:
     st.session_state['data'] = None
@@ -31,24 +36,30 @@ if os.path.exists("Multi_task/logo.png"):
     st.sidebar.image("Multi_task/logo.png", width=120)
 st.sidebar.title("🤖 AI Multi-Tools Engine")
 
+# 🚧 DEVELOPER CONTROL: जब आप कोड बदल रहे हों, इसे True कर दें या साइडबार से ऑन करें
+st.sidebar.subheader("🛠️ Developer Sandbox")
+under_construction_mode = st.sidebar.checkbox("Activate Under-Construction Lock", value=False)
+
+if under_construction_mode:
+    st.markdown("<h1 style='text-align: center; color: #EF4444;'>🚧 System Under Construction 🚧</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 20px;'>The developer is currently updating the algorithms and applying live modifications. Please check back in a few minutes!</p>", unsafe_allow_html=True)
+    st.image("https://giphy.com", use_container_width=True)
+    st.stop() # यह कोड आगे की पूरी स्क्रिप्ट को रोक देगा ताकि यूजर कुछ न कर सके
+
 menu = st.sidebar.selectbox(
     "Navigation Menu",
     [
         "🏠 Dashboard Home",
         "📈 Linear Regression", 
         "🎯 K-Means Clustering", 
-        "🏷️ KNN Classification"
+        "🏷️ KNN Classification",
+        "🚧 Advanced Tools (Under Construction Page)"
     ]
 )
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("⚙️ Global Configuration")
 test_size_user = st.sidebar.slider("Testing Data Size (%)", min_value=10, max_value=50, value=20, step=5) / 100.0
-
-if st.session_state['data'] is not None:
-    df = st.session_state['data'].copy()
-else:
-    df = None
 
 if menu == "🏠 Dashboard Home":
     st.markdown("<h1 style='text-align: center; color: #4F46E5;'>Automated Advanced ML Engine</h1>", unsafe_allow_html=True)
@@ -58,27 +69,29 @@ if menu == "🏠 Dashboard Home":
     uploaded_file = st.file_uploader("Drop your secure CSV file here", type=["csv"])
     
     if uploaded_file is not None:
-        st.session_state['data'] = pd.read_csv(uploaded_file)
+        with st.spinner("🔄 Authenticating and caching dataset..."):
+            time.sleep(1) # लाइव फील देने के लिए थोड़ा डिले
+            st.session_state['data'] = pd.read_csv(uploaded_file)
         st.success("Dataset successfully authenticated and loaded into secure cache.")
             
     if st.session_state['data'] is not None:
-        df_display = st.session_state['data']
+        df = st.session_state['data']
         st.markdown("### 📊 Live Dataset Overview")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Total Rows", int(df_display.shape[0]))
-        c2.metric("Total Columns", int(df_display.shape[1]))
-        c3.metric("Missing Cells Detected", int(df_display.isna().sum().sum()))
-        st.dataframe(df_display.head(10), use_container_width=True)
+        c1.metric("Total Rows", df.shape[0])
+        c2.metric("Total Columns", df.shape[1])
+        c3.metric("Missing Cells Detected", df.isna().sum().sum())
+        st.dataframe(df.head(10), use_container_width=True)
 
 elif menu == "📈 Linear Regression":
     st.markdown("<h2 style='color: #2563EB;'>📈 Linear Regression Pipeline</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
-    if df is None:
+    if st.session_state['data'] is None:
         st.warning("Please upload a safe CSV file from the 'Dashboard Home' section first.")
     else:
-        df_numeric = df.select_dtypes(include=[np.number]).dropna()
-        numeric_cols = df_numeric.columns.tolist()
+        df = st.session_state['data'].copy()
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         
         if len(numeric_cols) < 2:
             st.error("Dataset lacks sufficient continuous numeric variables for regression analysis.")
@@ -86,59 +99,59 @@ elif menu == "📈 Linear Regression":
             y_col = st.selectbox("Select Target Variable (Y)", numeric_cols)
             x_cols = st.multiselect("Select Independent Features (X)", [c for c in numeric_cols if c != y_col])
             
-            if x_cols:
-                X = df_numeric[x_cols].values
-                y = df_numeric[y_col].values
-                
-                num_samples = len(X)
-                indices = np.arange(num_samples)
-                np.random.seed(0)
-                np.random.shuffle(indices)
-                split_idx = int(num_samples * (1 - test_size_user))
-                train_idx, test_idx = indices[:split_idx], indices[split_idx:]
-                
-                X_train, X_test = X[train_idx], X[test_idx]
-                y_train, y_test = y[train_idx], y[test_idx]
-                
-                X_train_sm = sm.add_constant(X_train)
-                X_test_sm = sm.add_constant(X_test, has_constant='add')
-                ols_model = sm.OLS(y_train, X_train_sm).fit()
-                preds = ols_model.predict(X_test_sm)
+            if st.button("Execute Linear Regression") and x_cols:
+                # 🚧 यहाँ प्रोसेसिंग के दौरान 'Under Construction' स्पिनर दिखेगा
+                with st.spinner("⚙️ Architecture is Under Construction / Processing... Please Wait."):
+                    time.sleep(1.5) # प्रोसेसिंग का समय दिखाने के लिए नकली डिले
+                    working_df = df[x_cols + [y_col]].dropna()
+                    X = working_df[x_cols]
+                    y = working_df[y_col]
+                    
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_user, random_state=0)
+                    
+                    model = LinearRegression()
+                    model.fit(X_train, y_train)
+                    preds = model.predict(X_test)
+                    
+                st.markdown("### 🏆 Performance Matrix")
+                col1, col2 = st.columns(2)
+                col1.metric("R² Prediction Accuracy", f"{r2_score(y_test, preds):.4f}")
+                col2.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
                 
                 if len(x_cols) == 1:
-                    st.markdown("### 🔮 Live Interactive Prediction Calculator")
-                    feature_name = x_cols[0]
-                    intercept_val = ols_model.params[0]
-                    coefficient_val = ols_model.params[1] if len(ols_model.params) > 1 else 0.0
-                    
-                    user_input_val = st.number_input(f"Set Custom Input Value for {feature_name}:", value=float(np.mean(X_test)))
-                    predicted_outcome = (coefficient_val * user_input_val) + intercept_val
-                    st.success(f"💡 **Statement:** Agar **{feature_name}** ki value **{user_input_val:.2f}** hogi, toh **{y_col}** ki estimated value **{predicted_outcome:.2f}** hogi!")
-                
-                if st.button("Execute Detailed Analysis"):
-                    st.markdown("### 🏆 Performance Matrix")
-                    col1, col2 = st.columns(2)
-                    col1.metric("R² Prediction Accuracy", f"{r2_score(y_test, preds):.4f}")
-                    col2.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
-                    
-                    st.markdown("### 📋 Detailed OLS Regression Statistical Summary")
-                    st.text_area("OLS Summary Report Table", str(ols_model.summary()), height=350)
+                    st.markdown("### 📊 Continuous Fitting Trend")
+                    fig, ax = plt.subplots(figsize=(10, 5))
+                    plt.scatter(X_test, y_test, color='#2563EB', alpha=0.7, label='Actual Values')
+                    plt.plot(X_test, preds, color='#EF4444', linewidth=3, label='Optimal Fit Line')
+                    plt.xlabel(x_cols[0])
+                    plt.ylabel(y_col)
+                    plt.grid(True, linestyle='--', alpha=0.5)
+                    plt.legend()
+                    st.pyplot(fig)
+        
+        st.markdown("---")
+        st.markdown("### 💡 Trend Summary & Business Logic")
+        st.info("**Ice Cream Sales Trend Example:** Linear Regression helps find a direct link between variables. "
+                "For instance, **जैसे-जैसे Temperature (तापमान) बढ़ेगा, Ice Cream की Sales (बिक्री) भी उसी अनुपात में लगातार बढ़ेगी**। "
+                "यह मॉडल आपको भविष्य का सटीक नंबर (Exact Prediction Value) बताने में मदद करता है।")
 
 elif menu == "🎯 K-Means Clustering":
     st.markdown("<h2 style='color: #7C3AED;'>🎯 K-Means Clustering Core Engine</h2>", unsafe_allow_html=True)
     st.markdown("---")
     
-    if df is None:
+    if st.session_state['data'] is None:
         st.warning("Please upload a safe CSV file from the 'Dashboard Home' section first.")
     else:
+        df = st.session_state['data'].copy()
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         x_cols = st.multiselect("Select Processing Features (Min 2)", numeric_cols)
         
         if x_cols and len(x_cols) >= 2:
             working_df = df[x_cols].dropna()
             scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(working_df.values)
+            X_scaled = scaler.fit_transform(working_df)
             
+            st.markdown("### 📊 Step 1: Evaluating Distortion Curves")
             distortions = []
             max_k = min(10, len(working_df))
             K_range = range(1, max_k + 1)
@@ -151,63 +164,31 @@ elif menu == "🎯 K-Means Clustering":
             plt.plot(K_range, distortions, 'bx-', color='#7C3AED', marker='o', linewidth=2)
             plt.xlabel('Number of Clusters (K)')
             plt.ylabel('Calculated Structural Distortion')
+            plt.title('The Elbow Method Optimization Interface')
+            plt.grid(True, linestyle='--', alpha=0.5)
             st.pyplot(fig_elbow)
             
+            st.markdown("### ⚙️ Step 2: Final Cluster Optimization")
             k_choice = st.slider("Select Target Hyperparameter (K)", min_value=2, max_value=max_k, value=3)
             
             if st.button("Generate Partition Clusters"):
-                kmeans = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
-                clusters = kmeans.fit_predict(X_scaled)
-                working_df['Cluster_Output'] = clusters
+                # 🚧 यहाँ प्रोसेसिंग के दौरान 'Under Construction' स्पिनर दिखेगा
+                with st.spinner("⚙️ Architecture is Under Construction / Processing... Please Wait."):
+                    time.sleep(1.5)
+                    kmeans = KMeans(n_clusters=k_choice, random_state=42, n_init=10)
+                    clusters = kmeans.fit_predict(X_scaled)
                 st.success(f"Mathematical structural optimization split completed into {k_choice} separate nodes.")
-
-elif menu == "🏷️ KNN Classification":
-    st.markdown("<h2 style='color: #059669;'>🏷️ KNN Predictive Engine (Any Dataset Compatible)</h2>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    if df is None:
-        st.warning("Please upload a safe CSV file from the 'Dashboard Home' section first.")
-    else:
-        all_cols = df.columns.tolist()
-        y_col = st.selectbox("Select Target Column (Y)", all_cols)
-        
-        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-        x_cols = st.multiselect("Select Predictor Features (X)", [c for c in numeric_cols if c != y_col])
-        k_neighbors = st.slider("Set Neighbors Concentration Bound (K)", min_value=1, max_value=15, value=5)
-        
-        model_mode = st.radio("Select Prediction Task Mode:", ["Classification (For Text/Labels/Categories)", "Regression (For Continuous Decimals/Numbers)"])
-        
-        if st.button("Run KNN Model Pipeline") and x_cols:
-            working_df = df[x_cols + [y_col]].dropna()
-            X = working_df[x_cols].values
-            y = working_df[y_col].values
-            
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-            
-            num_samples = len(X_scaled)
-            indices = np.arange(num_samples)
-            np.random.seed(0)
-            np.random.shuffle(indices)
-            split_idx = int(num_samples * (1 - test_size_user))
-            train_idx, test_idx = indices[:split_idx], indices[split_idx:]
-            
-            X_train, X_test = X_scaled[train_idx], X_scaled[test_idx]
-            y_train, y_test = y[train_idx], y[test_idx]
-            
-            dists = cdist(X_test, X_train, metric='euclidean')
-            nearest_indices = np.argsort(dists, axis=1)[:, :k_neighbors]
-            
-            if model_mode == "Classification (For Text/Labels/Categories)":
-                st.info("ℹ️ Running manual Vectorized Classification Pipeline.")
-                y_train_str = y_train.astype(str)
-                preds = []
-                for row in nearest_indices:
-                    vals, counts = np.unique(y_train_str[row], return_counts=True)
-                    preds.append(vals[np.argmax(counts)])
-                preds = np.array(preds)
-                y_test_str = y_test.astype(str)
                 
-                st.metric("Custom Evaluation Accuracy", f"{accuracy_score(y_test_str, preds)*100:.2f}%")
-                st.text_area("Detailed Metrics Report", str(classification_report(y_test_str, preds, zero_division=0)), height=200)
+                fig_cluster, ax_cluster = plt.subplots(figsize=(10, 5))
+                sns.scatterplot(x=working_df.iloc[:, 0], y=working_df.iloc[:, 1], hue=clusters, palette='viridis', s=120, alpha=0.8)
+                plt.grid(True, linestyle='--', alpha=0.4)
+                st.pyplot(fig_cluster)
         
+        st.markdown("---")
+        st.markdown("### 💡 Trend Summary & Business Logic")
+        st.info("**Ice Cream Sales Trend Example:** K-Means डेटा को अलग-अलग ग्रुप्स (Clusters) में बांटता है। "
+                "उदाहरण के लिए, यह आपके डेटा को 3 ग्रुप्स में डिवाइड कर सकता है: "
+                "1. **Low Temperature - Low Ice Cream Sales** (ठंडा मौसम, कम बिक्री), "
+                "2. **Medium Temperature - Medium Sales** (सामान्य मौसम, मध्यम बिक्री), "
+                "3. **High Temperature - High Sales** (तेज गर्मी, सबसे ज्यादा बिक्री)। "
+                "इससे ग्राहकों के बिहेवियर पैटर्न्स को आसानी से ग्रुप किया जा सकता है।")
