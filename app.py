@@ -20,15 +20,6 @@ st.set_page_config(
     layout="wide"
 )
 
-if 'last_request_time' not in st.session_state:
-    st.session_state['last_request_time'] = 0.0
-
-current_time = time.time()
-if current_time - st.session_state['last_request_time'] < 0.5:
-    st.error("Too many rapid requests. Please wait a moment.")
-    st.stop()
-st.session_state['last_request_time'] = current_time
-
 if 'data' not in st.session_state:
     st.session_state['data'] = None
 
