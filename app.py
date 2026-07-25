@@ -22,6 +22,7 @@ st.set_page_config(
     layout="wide"
 )
 
+# Global Under Construction Intercept Filter
 if UNDER_CONSTRUCTION:
     st.warning("🚧 **Notice:** System Maintenance Active. The application is currently under construction. Algorithms are temporarily offline.")
     st.stop()
@@ -43,7 +44,7 @@ st.sidebar.subheader("⚙️ Global Configuration")
 test_size_user = st.sidebar.slider("Testing Data Size (%)", min_value=10, max_value=50, value=20, step=5) / 100.0
 
 if st.session_state['data'] is not None:
-    df = st.session_state['data']
+    df = st.session_state['data'].copy()
 else:
     df = None
 
@@ -80,8 +81,8 @@ elif menu == "📈 Linear Regression":
             
             if x_cols:
                 working_df = df[x_cols + [y_col]].dropna()
-                X = working_df[x_cols]
-                y = working_df[y_col]
+                X = working_df[x_cols].values
+                y = working_df[y_col].values
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size_user, random_state=0)
                 
                 X_train_sm = sm.add_constant(X_train)
@@ -92,11 +93,10 @@ elif menu == "📈 Linear Regression":
                 if len(x_cols) == 1:
                     st.markdown("### 🔮 Live Interactive Prediction Calculator")
                     feature_name = x_cols[0]
-                    intercept_val = ols_model.params['const']
-                    coefficient_val = ols_model.params[feature_name]
-                    p_val = ols_model.pvalues[feature_name]
+                    intercept_val = ols_model.params[0]
+                    coefficient_val = ols_model.params[1]
                     
-                    user_input_val = st.number_input(f"Set Custom Input Value for {feature_name}:", value=float(X_test[feature_name].mean()))
+                    user_input_val = st.number_input(f"Set Custom Input Value for {feature_name}:", value=float(np.mean(X_test)))
                     predicted_outcome = (coefficient_val * user_input_val) + intercept_val
                     st.success(f"💡 **Statement:** Agar **{feature_name}** ki value **{user_input_val:.2f}** hogi, toh **{y_col}** ki estimated value **{predicted_outcome:.2f}** hogi!")
                 
@@ -121,7 +121,7 @@ elif menu == "🎯 K-Means Clustering":
         if x_cols and len(x_cols) >= 2:
             working_df = df[x_cols].dropna()
             scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(working_df)
+            X_scaled = scaler.fit_transform(working_df.values)
             
             distortions = []
             max_k = min(10, len(working_df))
@@ -156,27 +156,29 @@ elif menu == "🏷️ KNN Core Engine":
         
         if st.button("Run KNN Model Pipeline") and x_cols:
             working_df = df[x_cols + [y_col]].dropna()
-            X = working_df[x_cols]
-            y = working_df[y_col]
             
-            # Smart Safe Switch: Automatically toggle between classification and regression
-            is_classification = (y.dtype == 'object') or (len(y.unique()) <= 10)
-            
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X.select_dtypes(include=[np.number]))
-            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=test_size_user, random_state=0)
-            
-            if is_classification:
-                st.info("ℹ️ Target variable detected as **Categorical**. Running **KNN Classification Pipeline**.")
-                knn = KNeighborsClassifier(n_neighbors=k_neighbors)
-                knn.fit(X_train, y_train)
-                preds = knn.predict(X_test)
-                st.metric("Model Classification Accuracy", f"{accuracy_score(y_test, preds)*100:.2f}%")
-                st.text_area("Detailed Report", str(classification_report(y_test, preds)))
+            X_raw = working_df[x_cols].select_dtypes(include=[np.number])
+            if X_raw.empty:
+                st.error("Please ensure you select at least one numeric feature for training.")
             else:
-                st.info("ℹ️ Target variable detected as **Continuous Numbers**. Running **KNN Regression Pipeline**.")
-                knn = KNeighborsRegressor(n_neighbors=k_neighbors)
-                knn.fit(X_train, y_train)
-                preds = knn.predict(X_test)
-                st.metric("Model R² Prediction Score", f"{r2_score(y_test, preds):.4f}")
-                st.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
+                scaler = StandardScaler()
+                X_scaled = scaler.fit_transform(X_raw.values) # 👈 Raw `.values` extraction to completely bypass Python 3.14 unique tracker errors
+                y_raw = working_df[y_col].values
+                
+                is_classification = (working_df[y_col].dtype == 'object') or (len(np.unique(y_raw)) <= 10)
+                X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_raw, test_size=test_size_user, random_state=0)
+                
+                if is_classification:
+                    st.info("ℹ️ Target variable detected as **Categorical**. Running **KNN Classification Pipeline**.")
+                    knn = KNeighborsClassifier(n_neighbors=k_neighbors)
+                    knn.fit(X_train, y_train)
+                    preds = knn.predict(X_test)
+                    st.metric("Model Classification Accuracy", f"{accuracy_score(y_test, preds)*100:.2f}%")
+                    st.text_area("Detailed Report", str(classification_report(y_test, preds)))
+                else:
+                    st.info("ℹ️ Target variable detected as **Continuous Numbers**. Running **KNN Regression Pipeline**.")
+                    knn = KNeighborsRegressor(n_neighbors=k_neighbors)
+                    knn.fit(X_train, y_train)
+                    preds = knn.predict(X_test) # 👈 Fixes internal predict dimensions crash on Python 3.14 
+                    st.metric("Model R² Prediction Score", f"{r2_score(y_test, preds):.4f}")
+                    st.metric("Mean Squared Error (MSE)", f"{mean_squared_error(y_test, preds):.4f}")
