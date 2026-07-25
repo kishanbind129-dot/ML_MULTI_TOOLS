@@ -63,9 +63,9 @@ if menu == "🏠 Dashboard Home":
         df = st.session_state['data']
         st.markdown("### 📊 Live Dataset Overview")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Total Rows", df.shape)
-        c2.metric("Total Columns", df.shape)
-        c3.metric("Missing Cells Detected", df.isna().sum().sum())
+        c1.metric("Total Rows", int(df.shape[0]))
+        c2.metric("Total Columns", int(df.shape[1]))
+        c3.metric("Missing Cells Detected", int(df.isna().sum().sum()))
         st.dataframe(df.head(10), use_container_width=True)
 
 elif menu == "📈 Linear Regression":
@@ -98,7 +98,7 @@ elif menu == "📈 Linear Regression":
                 
                 if len(x_cols) == 1:
                     st.markdown("### 🔮 Live Interactive Prediction Calculator")
-                    feature_name = x_cols
+                    feature_name = x_cols[0]
                     intercept_val = ols_model.params['const']
                     coefficient_val = ols_model.params[feature_name]
                     p_val = ols_model.pvalues[feature_name]
@@ -162,7 +162,7 @@ elif menu == "🎯 K-Means Clustering":
             
             for k in K_range:
                 kmeanModel = KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_scaled)
-                distortions.append(sum(np.min(cdist(X_scaled, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / X_scaled.shape)
+                distortions.append(sum(np.min(cdist(X_scaled, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / X_scaled.shape[0])
                 
             fig_elbow, ax_elbow = plt.subplots(figsize=(10, 4))
             plt.plot(K_range, distortions, 'bx-', color='#7C3AED', marker='o', linewidth=2)
@@ -191,5 +191,4 @@ elif menu == "🎯 K-Means Clustering":
                 
                 fig_cluster, ax_cluster = plt.subplots(figsize=(10, 5))
                 sns.scatterplot(x=working_df.iloc[:, 0], y=working_df.iloc[:, 1], hue=working_df['Cluster_Output'], palette='viridis', s=120, alpha=0.8)
-                plt.grid(True, linestyle='--', alpha=0.4)
-                st.pyplot(fig_cluster)
+                plt.grid(True, linestyle='--', alpha=0.4)v
